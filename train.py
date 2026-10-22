@@ -37,8 +37,8 @@ RF_VERSION = 6
 DEFECT_KEYWORDS = ("bad",)
 
 # --- Training settings. Recorded in REPORT.md. ---
-BASE_MODEL = "yolo11s.pt"
-EPOCHS = 60
+BASE_MODEL = "yolo11n.pt"
+EPOCHS = 40
 IMGSZ = 640
 BATCH = 16
 SEED = 0
