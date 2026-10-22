@@ -177,8 +177,8 @@ with gr.Blocks(title="Fruit quality inspection - operating point") as demo:
     with gr.Tab("Operating point"):
         with gr.Row():
             with gr.Column(scale=1):
-                t_low = gr.Slider(0.0, 1.0, 0.20, step=0.01, label="Pass below this")
-                t_high = gr.Slider(0.0, 1.0, 0.60, step=0.01, label="Fail above this")
+                t_low = gr.Slider(0.0, 1.0, 0.25, step=0.01, label="Pass below this")
+                t_high = gr.Slider(0.0, 1.0, 0.50, step=0.01, label="Fail above this")
                 base_rate = gr.Slider(0.0, 0.5, BASE_RATE, step=0.005, label="Base rate")
                 c_fp = gr.Number(COST_FP, label="Cost of a false positive (EUR)")
                 c_fn = gr.Number(COST_FN, label="Cost of a false negative (EUR)")

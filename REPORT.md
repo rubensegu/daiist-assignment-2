@@ -1,9 +1,9 @@
 # Assignment 2 Report
 
 **Name:** Ruben Segura
-**Student ID:** <!-- FILL IN -->
+**Student ID:** 19061
 **Email:** rsegura.ieu2022@student.ie.edu
-**Group:** <!-- pick one: BBADBA 5A | BBADBA 5B | PPLEDBA 5A | BDBA 3A -->
+**Group:** BBADBA 5B
 
 ---
 
@@ -140,8 +140,8 @@ pipeline runs with `uv run python main.py train`.
 
 | Model | mAP50 | mAP50-95 | Recall on defect classes |
 |---|---:|---:|---:|
-| Finetuned yolo11n | <!-- FILL from results/metrics.json --> | <!-- FILL --> | <!-- FILL --> |
-| Pretrained COCO yolo11n, zero-shot | <!-- FILL --> | <!-- FILL --> | 0.00 |
+| Finetuned yolo11n | **0.994** | **0.922** | **1.00** |
+| Pretrained COCO yolo11n, zero-shot | 0.025 | 0.011 | 0.00 |
 | Trivial: predict nothing | 0.00 | 0.00 | 0.00 |
 | Trivial: flag every piece as defective | n/a | n/a | 1.00 |
 
@@ -158,8 +158,12 @@ defects, which in business terms is the "do nothing" option. Flagging everything
 every defect and is the "human checks everything" option. Neither is free, and both are
 priced properly in the costing section below.
 
-<!-- FILL: was the gap as large as you expected? Write one honest sentence once you
-have the numbers. -->
+The gap was bigger than I expected, and it is not really a compliment to the model. The
+finetuned model scores 0.994 mAP50 against 0.025 for COCO zero-shot, and on the collapsed
+defect decision it separates the test split perfectly, with no false positives and no false
+negatives anywhere between thresholds of 0.13 and 0.39. A result that clean on 279 images
+tells me more about how easy the split is than about how good the model is, which is why
+every number below is treated as an upper bound.
 
 ---
 
@@ -171,24 +175,33 @@ decision is the highest confidence it gives to any `bad` detection in the image.
 
 | Class | Precision | Recall | AP50 | AP50-95 |
 |---|---:|---:|---:|---:|
-| bad apple | <!-- FILL from results/per_class.csv --> | | | |
-| bad banana | | | | |
-| bad orange | | | | |
-| good apple | | | | |
-| good banana | | | | |
-| good orange | | | | |
+| bad apple | 0.997 | 1.000 | 0.995 | 0.928 |
+| bad banana | 0.980 | 0.917 | 0.987 | 0.881 |
+| bad orange | 0.998 | 1.000 | 0.995 | 0.919 |
+| good apple | 0.982 | 1.000 | 0.995 | 0.987 |
+| good banana | 0.993 | 0.989 | 0.995 | 0.893 |
+| good orange | 0.998 | 1.000 | 0.995 | 0.922 |
 
 Confusion matrix: see `results/confusion_matrix.csv` and the dashboard.
 
-<!-- FILL, once you have the numbers, answering these three questions in your own words:
- 1. Which class carries the headline number (which one has most test instances and
-    therefore dominates the average)?
- 2. Which class is dragging the average down, and is that a real weakness or just a
-    thin test sample (remember good apple has 14 instances)?
- 3. What does the model confuse with what? The interesting confusion for the business
-    is good <-> bad within the same fruit, because that is a quality error. Confusing
-    a banana with an orange costs nothing. Check the confusion matrix and say which of
-    the two kinds of mistake dominates. -->
+`good banana` carries the headline number: with 184 instances it is the largest class in
+the test split, so the six-class average follows it more closely than any other.
+
+The class dragging the average down is `bad banana`, the only one under 0.99 recall at
+0.917, and that number I trust, because 105 test instances sit behind it. `good apple`
+looks perfect at 1.000 recall, but on 14 instances that is not a measurement, so I draw no
+conclusion about apples in either direction.
+
+On the confusions that matter, the quality errors split 14 to 11 towards over-rejection:
+11 good bananas called bad, 2 good oranges called bad and 1 good apple called bad, against
+5 bad oranges and 3 bad bananas called good, 2 bad oranges called good apples, and 1 bad
+banana missed entirely. Fruit-type confusions that keep the quality label, such as a bad
+orange called a bad apple, cost nothing and I ignore them. So the model errs towards
+throwing good fruit away, which at a 40:1 cost ratio is the direction I would have chosen
+myself. Two caveats: these counts come from the validation pass, which scores every box
+down to 0.001 confidence, and at my operating point of 0.25 the image-level decision makes
+no errors at all on this split. The same matrix also shows 923 `bad banana` boxes predicted
+where there is no object, which is the same artefact and disappears above 0.25.
 
 The average across six classes hides the thing I actually care about, which is whether a
 defective piece is caught at all. That is why the operating point below is chosen on the
@@ -215,8 +228,17 @@ threshold, what fraction of truly good pieces are wrongly flagged) and reweights
 the 5% base rate. The curve is saved to `results/cost_curve.png` and is redrawn live in the
 dashboard, where the base rate and all three costs can be changed.
 
-**Chosen operating point:** <!-- FILL: threshold from results/metrics.json -->, at an
-expected cost of <!-- FILL --> EUR per 1,000 pieces.
+**Chosen operating point:** **0.25**, at an
+expected cost of **0.00** EUR per 1,000 pieces.
+
+**The minimum is a plateau, not a point.** Every clean image in the test split scores at
+most 0.12 and every defective image scores at least 0.39, so any threshold between 0.13 and
+0.39 gives the same zero errors and the same zero cost. The sweep reports 0.13 only because
+that is the first grid point inside the gap, and shipping the edge of a plateau is a bad
+idea: it sits one unlucky image away from the cost jumping. I therefore deploy **0.25**, the
+middle of the gap, which is as far as I can get from both the highest-scoring good piece and
+the lowest-scoring defective one. The width of that gap is also the clearest single piece of
+evidence that this split is easier than a real line.
 
 **The two numbers that frame everything.** At a 5% base rate, doing nothing costs
 1000 x 0.05 x 10 = **500 EUR per 1,000 pieces**, and having a human look at every single
@@ -244,17 +266,23 @@ upper threshold it is rejected automatically. In between it goes to a person.
 
 | | Value |
 |---|---|
-| Pass below | <!-- FILL --> |
-| Send to a person between | <!-- FILL --> and <!-- FILL --> |
-| Reject above | <!-- FILL --> |
-| Share of pieces sent to a person | <!-- FILL from the dashboard --> |
+| Pass below | **0.25** |
+| Send to a person between | **0.25** and **0.50** |
+| Reject above | **0.50** |
+| Share of pieces sent to a person | **0.03%** (15 checks a day at 50,000 pieces) |
 
 **Does the review load fit the people available?** I assume a line that inspects **50,000
 pieces per day**, that one manual check takes **10 seconds**, and that an operator has
 **7.5 productive hours** per shift once breaks and changeovers are removed. The dashboard
-computes this live. <!-- FILL: reviews per day, minutes of work, FTE, then say plainly
-whether it is realistic. Rule of thumb: up to about 3 FTE is a normal quality team in a
-packhouse this size; above 6 FTE the design has failed and the thresholds must move. -->
+computes this live. At the 0.25 / 0.50 band that is 0.03% of pieces: **15 checks a day**, about **2.5 minutes**
+of work, **0.005 FTE**. That is not a staffing decision, it is a rounding error on one
+operator's shift, and the reason is that almost nothing in this test split lands near the
+boundary. The honest way to size it is to ask what happens if the real line is messier: at
+the widest band I would still consider sensible, 0.10 to 0.90, the model sends 1.6% of
+pieces to a person, which is 802 checks a day, 134 minutes of work and 0.30 FTE. Even that
+worst case is a third of one person, well inside the three FTE a packhouse this size treats
+as a normal quality team, so the design is realistic across the whole range I might end up
+in.
 
 **Priced against the three alternatives:**
 
@@ -262,8 +290,8 @@ packhouse this size; above 6 FTE the design has failed and the thresholds must m
 |---|---:|---|
 | Do nothing, ship everything | 500 EUR | Every defective piece escapes |
 | A person checks every piece | 50 EUR | Needs about 18 people at 50,000 pieces/day, which is why it is not done |
-| Model decides alone | <!-- FILL --> | No review cost, but every model error is paid at full price |
-| **Model plus review band (my design)** | **<!-- FILL -->** | <!-- FILL: is it actually the cheapest? If not, say so. --> |
+| Model decides alone | 0.00 EUR (at 0.25) | No review cost, but every model error is paid at full price |
+| **Model plus review band (my design)** | **0.02 EUR** | No, not on the numbers I can measure. The model alone at 0.25 costs 0.00 EUR per 1,000 on this test split and the review band costs 0.02 EUR, so here the band is pure overhead. I keep it because a measured cost of exactly zero is not a cost I believe: it means the split contains no case near the boundary, not that the model never errs. Treated as insurance, the band pays for itself as soon as the true escape rate exceeds roughly one piece in 700,000. |
 
 Manual inspection of everything looks cheap per thousand only because the per-check cost is
 small. At 50,000 pieces a day it is roughly 2,500 EUR a day and needs on the order of 18
