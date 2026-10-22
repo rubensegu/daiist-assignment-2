@@ -346,4 +346,4 @@ alternatives, every figure in the cost matrix and the base rate, the decision to
 six classes into a binary defect decision, and the placement of the two thresholds.
 
 **Verification.** I have read and checked everything submitted, changed what I did not
-agree with, and I can explain each decision and each number without the code in front of me.
+agree with.
